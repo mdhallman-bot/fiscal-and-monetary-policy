@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Makers Simulation</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#1a1a2e; --paper:#f5f0e8; --cream:#ede8d8;
+  --congress-dark:#1a3a5c; --congress-mid:#2563a8; --congress-light:#dbeafe;
+  --fed-dark:#1a3d2b; --fed-mid:#16a34a; --fed-light:#dcfce7;
+  --recession:#dc2626; --inflation:#ea580c; --stagflation:#7c3aed;
+  --gold:#b8860b; --border:#c8bfa8;
+  --correct:#15803d; --incorrect:#b91c1c; --partial:#a16207;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Source Serif 4',Georgia,serif;background:var(--paper);color:var(--ink);min-height:100vh;}
+
+/* MASTHEAD */
+.masthead{background:var(--ink);color:var(--paper);text-align:center;padding:18px 20px 14px;border-bottom:4px solid var(--gold);position:relative;overflow:hidden;}
+.masthead::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 60px,rgba(255,255,255,.03) 60px,rgba(255,255,255,.03) 61px);}
+.masthead h1{font-family:'Bebas Neue',sans-serif;font-size:2.6rem;letter-spacing:4px;position:relative;}
+.masthead p{font-size:.9rem;opacity:.7;letter-spacing:2px;text-transform:uppercase;margin-top:4px;font-weight:300;font-style:italic;position:relative;}
+
+/* NAME BAR */
+.name-bar{background:var(--cream);border-bottom:1px solid var(--border);padding:8px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.name-bar label{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#555;white-space:nowrap;}
+.name-bar input{border:1px solid var(--border);border-radius:3px;padding:5px 10px;font-family:'Source Serif 4',serif;font-size:.9rem;background:var(--paper);flex:1;min-width:180px;max-width:300px;}
+.name-bar input:focus{outline:2px solid var(--gold);}
+.period-input{max-width:80px!important;}
+.save-status{font-size:.72rem;font-style:italic;color:#999;margin-left:auto;}
+
+/* TABS */
+.tab-bar{display:flex;background:var(--cream);border-bottom:2px solid var(--border);overflow-x:auto;}
+.tab-btn{flex:1;padding:12px 8px;border:none;background:transparent;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:#888;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap;min-width:110px;}
+.tab-btn:hover{color:var(--ink);background:rgba(0,0,0,.04);}
+.tab-btn.active{color:var(--ink);border-bottom-color:var(--gold);background:var(--paper);}
+
+/* PANELS */
+.panel{display:none;padding:24px 20px;max-width:880px;margin:0 auto;}
+.panel.active{display:block;}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;margin-bottom:6px;padding-bottom:6px;border-bottom:2px solid var(--border);}
+.section-sub{font-size:.85rem;font-style:italic;color:#666;margin-bottom:16px;}
+
+/* REFERENCE */
+.ref-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;}
+@media(max-width:600px){.ref-grid{grid-template-columns:1fr;}}
+.ref-card{border:2px solid var(--border);border-radius:4px;overflow:hidden;}
+.ref-card.congress .ref-head{background:var(--congress-dark);}
+.ref-card.fed .ref-head{background:var(--fed-dark);}
+.ref-head{color:white;padding:10px 14px;font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;}
+.ref-head span{display:block;font-family:'Source Serif 4',serif;font-size:.75rem;font-style:italic;font-weight:300;letter-spacing:0;opacity:.85;margin-top:2px;}
+.ref-body{padding:12px 14px;background:white;}
+.ref-body p{font-size:.85rem;margin-bottom:8px;line-height:1.5;}
+.who-box{background:var(--cream);border:1px solid var(--border);border-radius:3px;padding:8px 10px;margin-bottom:10px;font-size:.82rem;line-height:1.6;}
+.who-label{font-family:'Bebas Neue',sans-serif;font-size:.78rem;letter-spacing:1px;color:#666;margin-bottom:3px;}
+.fed-explainer{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:3px;padding:9px 11px;margin-bottom:10px;font-size:.82rem;line-height:1.6;}
+.fed-explainer .who-label{color:var(--fed-dark);}
+.tool-row{display:flex;align-items:flex-start;gap:8px;margin:6px 0;font-size:.85rem;line-height:1.4;}
+.tool-badge{flex-shrink:0;padding:2px 7px;border-radius:2px;font-size:.7rem;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
+.congress .tool-badge{background:var(--congress-light);color:var(--congress-dark);}
+.fed .tool-badge{background:var(--fed-light);color:var(--fed-dark);}
+.when-box{margin-top:10px;padding:8px 10px;border-radius:3px;font-size:.8rem;line-height:1.5;}
+.congress .when-box{background:var(--congress-light);}
+.fed .when-box{background:var(--fed-light);}
+.compare-table{width:100%;border-collapse:collapse;margin-top:20px;font-size:.85rem;}
+.compare-table th{background:var(--ink);color:var(--paper);padding:8px 12px;text-align:left;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;font-size:.9rem;}
+.compare-table td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+.compare-table tr:nth-child(even) td{background:var(--cream);}
+
+/* SIM DIRECTIONS */
+.sim-directions{background:var(--ink);color:var(--paper);border-radius:4px;padding:14px 18px;margin-bottom:18px;}
+.sim-directions h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px;font-size:1rem;color:var(--gold);margin-bottom:8px;}
+.sim-directions ol{padding-left:18px;font-size:.85rem;line-height:1.85;}
+.sim-directions strong{color:#fde68a;}
+
+/* PROGRESS */
+.progress-bar{display:flex;gap:6px;align-items:center;margin-bottom:10px;}
+.progress-dot{width:10px;height:10px;border-radius:50%;background:var(--border);transition:background .3s;}
+.progress-dot.done{background:var(--correct);}
+.progress-dot.active{background:var(--gold);}
+.progress-label{font-size:.78rem;color:#888;font-style:italic;margin-left:4px;}
+
+/* SCENARIO TABS */
+.scenario-tab-bar{display:flex;border:2px solid var(--border);border-radius:4px 4px 0 0;overflow:hidden;}
+.scenario-tab{flex:1;padding:10px 6px;border:none;background:var(--cream);font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:1px;cursor:pointer;border-right:1px solid var(--border);color:#777;text-align:center;transition:all .15s;}
+.scenario-tab:last-child{border-right:none;}
+.scenario-tab:hover{background:var(--paper);color:var(--ink);}
+.scenario-tab.active-recession{background:#fff5f5;color:var(--recession);border-bottom:3px solid var(--recession);}
+.scenario-tab.active-inflation{background:#fff7ed;color:var(--inflation);border-bottom:3px solid var(--inflation);}
+.scenario-tab.active-stagflation{background:#f5f3ff;color:var(--stagflation);border-bottom:3px solid var(--stagflation);}
+.scenario-tab .chk{font-size:.75rem;margin-left:4px;color:var(--correct);}
+
+/* SCENARIO CONTENT */
+.scenario-content{display:none;border:2px solid var(--border);border-top:none;border-radius:0 0 4px 4px;}
+.scenario-content.visible{display:block;}
+
+/* BRIEF */
+.scenario-brief{padding:14px 18px;border-bottom:2px solid var(--border);}
+.scenario-brief[data-for="recession"]{background:#fff5f5;border-left:5px solid var(--recession);}
+.scenario-brief[data-for="inflation"]{background:#fff7ed;border-left:5px solid var(--inflation);}
+.scenario-brief[data-for="stagflation"]{background:#f5f3ff;border-left:5px solid var(--stagflation);}
+.brief-label{font-family:'Bebas Neue',sans-serif;letter-spacing:2px;font-size:.83rem;margin-bottom:5px;}
+.scenario-brief[data-for="recession"] .brief-label{color:var(--recession);}
+.scenario-brief[data-for="inflation"] .brief-label{color:var(--inflation);}
+.scenario-brief[data-for="stagflation"] .brief-label{color:var(--stagflation);}
+.brief-headline{font-size:1.05rem;font-weight:600;margin-bottom:7px;}
+.brief-body{font-size:.87rem;line-height:1.6;color:#333;}
+.stat-row{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+.stat-box{padding:5px 10px;border-radius:3px;font-size:.78rem;font-weight:600;background:white;border:1px solid var(--border);}
+
+/* ROLES */
+.roles-container{display:grid;grid-template-columns:1fr 1fr;}
+@media(max-width:620px){.roles-container{grid-template-columns:1fr;}}
+.role-panel{border-right:1px solid var(--border);}
+.role-panel:last-child{border-right:none;}
+.congress-panel{border-top:3px solid var(--congress-mid);}
+.fed-panel{border-top:3px solid var(--fed-mid);}
+.role-header{padding:9px 13px;font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:2px;color:white;}
+.congress-panel .role-header{background:var(--congress-dark);}
+.fed-panel .role-header{background:var(--fed-dark);}
+.role-header span{display:block;font-family:'Source Serif 4',serif;font-size:.72rem;font-weight:300;font-style:italic;letter-spacing:0;opacity:.8;margin-top:2px;}
+.role-body{padding:12px 13px;background:white;}
+.choice-group{margin-bottom:11px;}
+.choice-label{font-size:.76rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;color:#555;}
+.choice-options{display:flex;flex-direction:column;gap:4px;}
+.choice-opt{display:flex;align-items:flex-start;gap:7px;padding:6px 9px;border:1px solid var(--border);border-radius:3px;cursor:pointer;font-size:.81rem;line-height:1.4;transition:all .15s;background:var(--paper);}
+.choice-opt:hover{background:var(--cream);}
+.choice-opt input{flex-shrink:0;margin-top:2px;accent-color:var(--congress-mid);}
+.fed-panel .choice-opt input{accent-color:var(--fed-mid);}
+.choice-opt.sel-c{background:var(--congress-light);border-color:var(--congress-mid);}
+.choice-opt.sel-f{background:var(--fed-light);border-color:var(--fed-mid);}
+.choice-opt.g-correct{background:#f0fdf4!important;border-color:var(--correct)!important;}
+.choice-opt.g-wrong{background:#fef2f2!important;border-color:var(--incorrect)!important;}
+.choice-opt.g-show{outline:2px dashed var(--correct);background:#f0fdf4!important;border-color:var(--correct)!important;}
+.intensity-group{margin-bottom:11px;}
+.intensity-slider{width:100%;margin:5px 0 3px;accent-color:var(--congress-mid);}
+.fed-panel .intensity-slider{accent-color:var(--fed-mid);}
+.intensity-labels{display:flex;justify-content:space-between;font-size:.68rem;color:#999;font-style:italic;}
+.intensity-disp{text-align:center;font-size:.76rem;font-weight:600;margin-top:2px;}
+.congress-panel .intensity-disp{color:var(--congress-dark);}
+.fed-panel .intensity-disp{color:var(--fed-dark);}
+.justify-area{width:100%;border:1px solid var(--border);border-radius:3px;padding:7px 9px;font-family:'Source Serif 4',serif;font-size:.83rem;line-height:1.5;resize:vertical;min-height:72px;background:var(--paper);}
+.justify-area:focus{outline:2px solid var(--congress-mid);}
+.fed-panel .justify-area:focus{outline-color:var(--fed-mid);}
+
+/* ACTION BAR */
+.action-bar{display:flex;gap:10px;padding:11px 13px;background:var(--cream);border-top:1px solid var(--border);align-items:center;flex-wrap:wrap;}
+.btn-grade{font-family:'Bebas Neue',sans-serif;font-size:.93rem;letter-spacing:2px;padding:7px 18px;background:var(--ink);color:var(--paper);border:none;border-radius:3px;cursor:pointer;transition:all .2s;}
+.btn-grade:hover{background:#333;}
+.btn-expert{font-family:'Bebas Neue',sans-serif;font-size:.93rem;letter-spacing:2px;padding:7px 18px;background:transparent;color:var(--gold);border:2px solid var(--gold);border-radius:3px;cursor:pointer;transition:all .2s;}
+.btn-expert:hover{background:var(--gold);color:white;}
+.grade-sum{font-size:.82rem;font-weight:600;margin-left:auto;}
+
+/* FEEDBACK */
+.grade-fb{display:none;padding:10px 13px;font-size:.82rem;border-top:1px solid var(--border);background:white;}
+.grade-fb.visible{display:block;}
+.fb-row{margin-bottom:4px;line-height:1.4;}
+.tag-ok{color:var(--correct);font-weight:600;}
+.tag-no{color:var(--incorrect);font-weight:600;}
+.tag-wr{color:var(--partial);font-style:italic;}
+
+/* EXPERT */
+.expert-reveal{display:none;border-top:2px solid var(--gold);background:white;}
+.expert-reveal.visible{display:block;}
+.expert-head{background:var(--gold);color:white;padding:9px 14px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;}
+.expert-body{padding:14px;}
+.expert-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:560px){.expert-grid{grid-template-columns:1fr;}}
+.expert-col h4{font-family:'Bebas Neue',sans-serif;letter-spacing:1px;font-size:.9rem;margin-bottom:7px;}
+.expert-col.congress h4{color:var(--congress-dark);}
+.expert-col.fed h4{color:var(--fed-dark);}
+.expert-col p{font-size:.83rem;line-height:1.6;color:#333;}
+.tension-box{margin-top:12px;padding:10px 13px;background:#fffbeb;border:1px solid #fcd34d;border-radius:3px;font-size:.83rem;line-height:1.6;}
+.tension-box strong{color:#92400e;}
+
+/* EXIT TICKET */
+.exit-q{margin-bottom:16px;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.exit-q-head{background:var(--ink);color:var(--paper);padding:8px 14px;font-size:.85rem;font-style:italic;font-weight:300;}
+.exit-q-body{padding:12px 14px;background:white;}
+.exit-q-body p{font-size:.88rem;font-weight:600;margin-bottom:8px;}
+.exit-ta{width:100%;border:1px solid var(--border);border-radius:3px;padding:8px 10px;font-family:'Source Serif 4',serif;font-size:.85rem;line-height:1.5;resize:vertical;min-height:70px;background:var(--paper);}
+.exit-ta:focus{outline:2px solid var(--gold);}
+
+/* SCORE SUMMARY */
+.score-box{background:var(--ink);color:var(--paper);border-radius:4px;padding:16px 20px;margin-bottom:20px;text-align:center;display:none;}
+.score-box h3{font-family:'Bebas Neue',sans-serif;letter-spacing:3px;font-size:1.1rem;color:var(--gold);margin-bottom:10px;}
+.score-big{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:2px;line-height:1;}
+.score-denom{font-size:1rem;opacity:.6;margin-top:4px;}
+.score-chips{display:flex;gap:12px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
+.chip{padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:600;}
+.chip-r{background:var(--recession);}
+.chip-i{background:var(--inflation);}
+.chip-s{background:var(--stagflation);}
+.score-note{font-size:.76rem;opacity:.55;margin-top:8px;font-style:italic;}
+
+/* SUBMIT */
+.submit-section{margin-top:24px;border-top:2px solid var(--border);padding-top:20px;}
+.submit-section h3{font-family:'Bebas Neue',sans-serif;letter-spacing:2px;font-size:1.1rem;margin-bottom:6px;}
+.submit-section p{font-size:.85rem;color:#555;margin-bottom:14px;}
+.btn-pdf{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;padding:13px 40px;background:var(--congress-dark);color:white;border:none;border-radius:3px;cursor:pointer;transition:all .2s;}
+.btn-pdf:hover{background:var(--congress-mid);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.2);}
+
+/* PRINT */
+@media print{
+  .tab-bar,.name-bar .save-status,.btn-grade,.btn-expert,.btn-pdf,.scenario-tab-bar,.submit-section,.action-bar{display:none!important;}
+  .panel{display:block!important;padding:8px;max-width:100%;}
+  .masthead{padding:10px;}
+  .masthead h1{font-size:1.5rem;}
+  .scenario-content{display:block!important;border:1px solid #ccc;margin-bottom:10px;page-break-inside:avoid;}
+  .expert-reveal{display:block!important;}
+  body{background:white;}
+  .roles-container{grid-template-columns:1fr 1fr;}
+  .score-box{display:block!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .grade-fb{display:block!important;}
+}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <h1>Policy Makers</h1>
+  <p>Fiscal &amp; Monetary Policy Simulation</p>
+</div>
+
+<div class="name-bar">
+  <label for="sname">Name:</label>
+  <input type="text" id="sname" placeholder="Your full name" oninput="saveAll()">
+  <label for="speriod">Period:</label>
+  <input type="text" id="speriod" class="period-input" placeholder="e.g. 3" oninput="saveAll()">
+  <span class="save-status" id="save-status">Not yet saved</span>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('reference',this)">📋 Reference</button>
+  <button class="tab-btn" onclick="showTab('simulation',this)">🏛 Simulation</button>
+  <button class="tab-btn" onclick="showTab('exit',this)">✏️ Exit Ticket</button>
+</div>
+
+<!-- ═══════════════════ REFERENCE ═══════════════════ -->
+<div id="tab-reference" class="panel active">
+  <div class="section-title">Quick Reference</div>
+  <div class="section-sub">Read this before the simulation. You can come back at any time.</div>
+  <div class="ref-grid">
+
+    <div class="ref-card congress">
+      <div class="ref-head">Fiscal Policy<span>Government taxing &amp; spending</span></div>
+      <div class="ref-body">
+        <div class="who-box">
+          <div class="who-label">Who Controls It</div>
+          The <strong>President</strong> proposes a federal budget each year — but that is all the President can do on their own. For anything to actually happen, <strong>both houses of Congress must agree and pass it into law</strong>: first the <strong>House of Representatives</strong> (435 members), then the <strong>Senate</strong> (100 members). Because this process requires debate, compromise, and votes in two chambers, fiscal policy is <strong>slow</strong> — it can take months or years, even during a crisis.
+        </div>
+        <div class="tool-row"><span class="tool-badge">TOOL 1</span><span><strong>Government Spending</strong> — Congress can increase or decrease spending on things like infrastructure, schools, defense, or social programs (e.g. unemployment benefits).</span></div>
+        <div class="tool-row"><span class="tool-badge">TOOL 2</span><span><strong>Taxes</strong> — Congress can raise or lower taxes on individuals and businesses, changing how much money people have available to spend.</span></div>
+        <div class="when-box">
+          <strong>Expansionary (stimulate):</strong> Increase spending OR cut taxes → puts more money into the economy.<br>
+          <strong>Contractionary (slow down):</strong> Cut spending OR raise taxes → removes money from the economy.
+        </div>
+      </div>
+    </div>
+
+    <div class="ref-card fed">
+      <div class="ref-head">Monetary Policy<span>Controlling money &amp; interest rates</span></div>
+      <div class="ref-body">
+        <div class="fed-explainer">
+          <div class="who-label">What Is the Federal Reserve?</div>
+          The <strong>Federal Reserve</strong> (called "the Fed") is the <strong>central bank of the United States</strong>. Think of it as the bank that all other banks answer to. Congress created it in <strong>1913</strong> to manage the nation's money supply and keep the economy stable. The Fed is <strong>independent</strong> — it is <em>not</em> controlled by the President or Congress, and its leaders are <em>not elected by voters</em>. This is intentional: economists believe that decisions about interest rates should be made by financial experts free from political pressure. The Fed's board of governors meets roughly <strong>8 times per year</strong> and can act far faster than Congress.
+        </div>
+        <div class="tool-row"><span class="tool-badge">TOOL 1</span><span><strong>Interest Rates</strong> — the Fed raises or lowers the cost of borrowing money. Lower rates → cheaper loans → more spending &amp; investment. Higher rates → expensive loans → less spending.</span></div>
+        <div class="tool-row"><span class="tool-badge">TOOL 2</span><span><strong>Money Supply</strong> — the Fed can increase or decrease the amount of money circulating in the economy by buying or selling government bonds.</span></div>
+        <div class="when-box">
+          <strong>Expansionary (stimulate):</strong> Lower interest rates OR increase money supply → cheaper/easier to borrow.<br>
+          <strong>Contractionary (slow down):</strong> Raise interest rates OR decrease money supply → more expensive to borrow, less spending.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <table class="compare-table">
+    <thead><tr><th></th><th>Fiscal Policy</th><th>Monetary Policy</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Who controls it?</strong></td><td>President proposes; House of Reps + Senate must both pass it</td><td>The Federal Reserve (independent — leaders are not elected)</td></tr>
+      <tr><td><strong>Main tools</strong></td><td>Taxes, government spending</td><td>Interest rates, money supply</td></tr>
+      <tr><td><strong>How fast?</strong></td><td>Slow — requires debate and votes in two chambers of Congress</td><td>Faster — Fed meets ~8x per year and can act quickly</td></tr>
+      <tr><td><strong>To stimulate:</strong></td><td>Increase spending / cut taxes</td><td>Lower interest rates</td></tr>
+      <tr><td><strong>To slow down:</strong></td><td>Cut spending / raise taxes</td><td>Raise interest rates</td></tr>
+      <tr><td><strong>Risk if overused</strong></td><td>Government debt, inflation</td><td>Inflation or recession</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════ SIMULATION ═══════════════════ -->
+<div id="tab-simulation" class="panel">
+  <div class="section-title">Policy Simulation</div>
+
+  <div class="sim-directions">
+    <h3>📋 Directions — Read Before You Begin</h3>
+    <ol>
+      <li>You will complete <strong>all three scenarios</strong> — Recession, Inflation, and Stagflation. <strong>Do not skip any.</strong></li>
+      <li>Click each scenario tab above and read the <strong>Crisis Briefing</strong> carefully. Pay attention to the economic stats.</li>
+      <li>For <strong>each scenario</strong>, fill out <strong>both</strong> the Congress panel and the Federal Reserve panel. You are making decisions as both institutions.</li>
+      <li>For each role: choose your approach (Step 1), your tool (Step 2), your intensity (Step 3), and write a justification (Step 4).</li>
+      <li>When finished with a scenario, click <strong>"Grade My Choices"</strong> to check your answers, then <strong>"Reveal Expert Analysis"</strong> to compare your thinking to what economists recommend.</li>
+      <li>After all three scenarios are graded, go to the <strong>Exit Ticket</strong> tab to answer three final questions, then save as PDF to submit.</li>
+    </ol>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-dot active" id="dot-recession"></div>
+    <div class="progress-dot" id="dot-inflation"></div>
+    <div class="progress-dot" id="dot-stagflation"></div>
+    <span class="progress-label" id="prog-label">0 of 3 scenarios graded</span>
+  </div>
+
+  <div class="scenario-tab-bar">
+    <button class="scenario-tab" id="stab-recession" onclick="showScenario('recession')">📉 Recession<span class="chk" id="chk-recession"></span></button>
+    <button class="scenario-tab" id="stab-inflation" onclick="showScenario('inflation')">🔥 Inflation<span class="chk" id="chk-inflation"></span></button>
+    <button class="scenario-tab" id="stab-stagflation" onclick="showScenario('stagflation')">⚠️ Stagflation<span class="chk" id="chk-stagflation"></span></button>
+  </div>
+
+  <!-- RECESSION -->
+  <div class="scenario-content" id="sc-recession">
+    <div class="scenario-brief" data-for="recession">
+      <div class="brief-label">📉 Crisis Briefing — Recession</div>
+      <div class="brief-headline">The U.S. Economy Has Entered a Recession</div>
+      <div class="brief-body">Consumer confidence has collapsed following a series of major bank failures. Americans are spending less, businesses are cutting back, and layoffs are spreading. GDP has fallen for two consecutive quarters. The country needs an economic boost — fast.</div>
+      <div class="stat-row">
+        <div class="stat-box" style="color:var(--recession)">Unemployment: 8.4% ↑</div>
+        <div class="stat-box">Inflation: 1.8% (stable)</div>
+        <div class="stat-box" style="color:var(--recession)">GDP Growth: −2.1% ↓</div>
+      </div>
+    </div>
+    <div class="roles-container">
+      <div class="role-panel congress-panel">
+        <div class="role-header">You Are Congress<span>Fiscal Policy Decision</span></div>
+        <div class="role-body">
+          <div class="choice-group"><div class="choice-label">Step 1 — Choose your approach</div>
+            <div class="choice-options">
+              <label class="choice-opt"><input type="radio" name="r-c-app" value="expansionary"> Expansionary — stimulate the economy</label>
+              <label class="choice-opt"><input type="radio" name="r-c-app" value="contractionary"> Contractionary — slow the economy down</label>
+              <label class="choice-opt"><input type="radio" name="r-c-app" value="hold"> Hold — do nothing for now</label>
+            </div>
+          </div>
+          <div class="choice-group"><div class="choice-label">Step 2 — Choose your tool</div>
+            <div class="choice-options">
+              <label class="choice-opt"><input type="radio" name="r-c-tool" value="inc-spend"> Increase government spending</label>
+              <label class="choice-opt"><input type="radio" name="r-c-tool" value="dec-spend"> Decrease government spending</label>
+              <label class="choice-opt"><input type="radio" name="r-c-tool" value="cut-tax"> Cut taxes</label>
+              <label class="choice-opt"><input type="radio" name="r-c-tool" value="raise-tax"> Raise taxes</label>
+              <label class="choice-opt"><input type="radio" name="r-c-tool" value="both-exp"> Both — increase spending AND cut taxes</label>
+            </div>
+          </div>
+          <div class="intensity-group"><div class="choice-label">Step 3 — How aggressive?</div>
+            <input type="range" class="intensity-slider" id="rc-int" min="1" max="5" value="3" oninput="updInt('rc');saveAll()">
+            <div class="intensity-labels"><span>Cautious</span><span>Moderate</span><span>Aggressive</span></div>
+            <div class="intensity-disp" id="rc-int-lbl">Moderate response</div>
+          </div>
+          <div class="choice-group"><div class="choice-label">Step 4 — Justify your decision</div>
+            <textarea class="justify-area" id="r-c-just" placeholder="Why these tools? What problem are you solving? What could go wrong?" oninput="saveAll()"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="role-panel fed-panel">
+        <div class="role-header">You Are the Fed<span>Monetary Policy Decision</span></div>
+        <div class="role-body">
+          <div class="choice-group"><div class="choice-label">Step 1 — Choose your approach</div>
+            <div class="choice-options">
+              <label class="choice-opt"><input type="radio" name="r-f-app" value="expansionary"> Expansionary — stimulate the economy</label>
+              <label class="choice-opt"><input type="radio" name="r-f-app" value="contractionary"> Contractionary — slow the economy down</label>
+              <label class="choice-opt"><input type="radio" name="r-f-app" value="hold"> Hold — keep rates steady</label>
+            </div>
+          </div>
+          <div class="choice-group"><div class="choice-label">Step 2 — Choose your tool</div>
+            <div class="choice-options">
+              <label class="choice-opt"><input type="radio" name="r-f-tool" value="lower-rates"> Lower interest rates</label>
+              <label class="choice-opt"><input type="radio" name="r-f-tool" value="raise-rates"> Raise interest rates</label>
+              <label class="choice-opt"><input type="radio" name="r-f-tool" value="inc-money"> Increase money supply (buy bonds)</label>
+              <label class="choice-opt"><input type="radio" name="r-f-tool" value="dec-money"> Decrease money supply (sell bonds)</label>
+              <label class="choice-opt"><input type="radio" name="r-f-tool" value="both-exp-f"> Both — lower rates AND increase money supply</label>
+            </div>
+          </div>
+          <div class="intensity-group"><div class="choice-label">Step 3 — How aggressive?</div>
+            <input type="range" class="intensity-slider" id="rf-int" min="1" max="5" value="3" oninput="updInt('rf');saveAll()">
+            <div class="intensity-labels"><span>Cautious</span><span>Moderate</span><span>Aggressive</span></div>
+            <div class="intensity-disp" id="rf-int-lbl">Moderate response</div>
+          </div>
+          <div class="choice-group"><div class="choice-label">Step 4 — Justify your decision</div>
+            <textarea class="justify-area" id="r-f-just" placeholder="Why these tools? What problem are you solving? What could go wrong?" oninput="saveAll()"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="action-bar">
+      <button class="btn-grade" onclick="grade('recession')">Grade My Choices</button>
+      <button class="btn-expert" onclick="toggleExpert('recession')">Reveal Expert Analysis</button>
+      <span class="grade-sum" id="gsum-recession"></span>
+    </div>
+    <div class="grade-fb" id="gfb-recession"></div>
+    <div class="expert-reveal" id="exp-recession">
+      <div class="expert-head">📊 Expert Analysis — Recession</div>
+      <div class="expert-body">
+        <div class="expert-grid">
+          <div class="expert-col congress"><h4>What Congress Would Likely Do</h4><p>Most economists recommend <strong>expansionary fiscal policy</strong> during a recession. Congress would likely pass a <strong>stimulus package</strong> — increasing spending on infrastructure, unemployment benefits, and direct payments — and might also <strong>cut taxes</strong> temporarily to put more money in consumers' hands. The goal: inject money into the economy to boost demand and employment. The risk: adding to the national debt.</p></div>
+          <div class="expert-col fed"><h4>What the Fed Would Likely Do</h4><p>The Fed would move to <strong>expansionary monetary policy</strong> — <strong>cutting interest rates</strong> to make borrowing cheaper for businesses and consumers. They might also <strong>increase the money supply</strong> by purchasing government bonds ("quantitative easing"). Lower rates encourage businesses to invest and hire. The risk: if rates stay too low too long, inflation can follow.</p></div>
+        </div>
+        <div class="tension-box"><strong>Working Together:</strong> During the 2008 financial crisis and COVID recession, Congress passed massive spending bills while the Fed slashed rates to near zero. Fiscal AND monetary expansion working together helped prevent complete economic collapse. This coordination is rare but powerful.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFLATION -->
+  <div class="scenario-content" id="sc-inflation">
+    <div class="scenario-brief" data-for="inflation">
+      <div class="brief-label">🔥 Crisis Briefing — Inflation Spike</div>
+      <div class="brief-headline">Inflation Has Reached a 40-Year High</div>
+      <div class="brief-body">After years of low interest rates and massive government stimulus, the economy is overheating. Consumers are spending heavily, supply chains are strained, and prices are rising rapidly across food, housing, energy, and goods. The purchasing power of everyday Americans is eroding quickly.</div>
+      <div class="stat-row">
+        <div class="stat-box">Unemployment: 3.6% (low)</div>
+        <div class="stat-box" style="color:var(--inflation)">Inflation: 9.1% ↑↑</div>
+        <div class="stat-box">GDP Growth: +2.8%</div>
+      </div>
+    </div>
+    <div class="roles-container">
+      <div class="role-panel congress-panel">
+        <div class="role-header">You Are Congress<span>Fiscal Policy Decision</span></div>
+        <div class="role-body">
+          <div class="choice-group"><div class="choice-label">Step 1 — Choose your approach</div>
+            <div class="choice-options">
+              <label class="choice-opt"><input type="radio" name="i-c-app" value="expansionary"> Expansionary — stimulate the economy</label>
+              <label class="choice-opt"><input type="radio" name="i-c-app" value="contractionary"> Contractionary — slow the economy down</label>
+              <label class="choice-opt"><input type="radio" name="i-c-app" value="hold"> Hold — do nothing for now</label>
+            </div>
+          </div>
+          <div class="choice-group"><div class="choice-label">Step 2 — Choose your tool</div>
+            <div class="choice-options">
+              <label class="choice-opt"><input type="radio" name="i-c-tool" value="inc-spend"> Increase government spending</label>
+              <label class="choice-opt"><input type="radio" name="i-c-tool" value="dec-spend"> Decrease government spending</label>
+              <label class="choice-opt"><input type="radio" name="i-c-tool" value="cut-tax"> Cut taxes</label>
+              <label class="choice-opt"><input type="radio" name="i-c-tool" value="raise-tax"> Raise taxes</label>
+              <label class="choice-opt"><input type="radio" name="i-c-tool" value="both-con"> Both — cut spending AND raise taxes</label>
+            </div>
+          </div>
+          <div class="intensity-group"><div class="choice-label">Step 3 — How aggressive?</div>
+            <input type="range" class="intensity-slider" id="ic-int" min="1" max="5" value="3" oninput="updInt('ic');saveAll()">
+            <div class="intensity-labels"><span>Cautious</span><span>Moderate</span><span>Aggressive</span></div>
+            <div class="intensity-disp" id="ic-int-lbl">Moderate response</div>
+          </div>
+          <div class="choice-group"><div class="choice-label">Step 4 — Justify your decision</div>
+            <textarea class="justify-area" id="i-c-just" placeholder="Why these tools? What problem are you solving? What could go wrong?" oninput="saveAll()"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="role-panel fed-panel">
+        <div class="role-header">You Are the Fed<span>Monetary Policy Decision</span></div>
+        <div class="role-body">
+          <div class="choice-group"><div class="choice-label">Step 1 — Choose your approach</div>
+            <div class="choice-options">
+              <label class="choice-opt"><input type="radio" name="i-f-app" value="expansionary"> Expansionary — stimulate the economy</label>
+              <label class="choice-opt"><input type="radio" name="i-f-app" value="contractionary"> Contractionary — slow the economy down</label>
+              <label class="choice-opt"><input type="radio" name="i-f-app" value="hold"> Hold — keep rates steady</label>
+            </div>
+          </div>
+          <div class="choice-group"><div class="choice-label">Step 2 — Choose your tool</div>
+            <div class="choice-options">
+              <label class="choice-opt"><input type="radio" name="i-f-tool" value="lower-rates"> Lower interest rates</label>
+              <label class="choice-opt"><input type="radio" name="i-f-tool" value="raise-rates"> Raise interest rates</label>
+              <label class="choice-opt"><input type="radio" name="i-f-tool" value="inc-money"> Increase money supply (buy bonds)</label>
+              <label class="choice-opt"><input type="radio" name="i-f-tool" value="dec-money"> Decrease money supply (sell bonds)</label>
+              <label class="choice-opt"><input type="radio" name="i-f-tool" value="both-con-f"> Both — raise rates AND decrease money supply</label>
+            </div>
+          </div>
+          <div class="intensity-group"><div class="choice-label">Step 3 — How aggressive?</div>
+            <input type="range" class="intensity-slider" id="if-int" min="1" max="5" value="3" oninput="updInt('if');saveAll()">
+            <div class="intensity-labels"><span>Cautious</span><span>Moderate</span><span>Aggressive</span></div>
+            <div class="intensity-disp" id="if-int-lbl">Moderate response</div>
+          </div>
+          <div class="choice-group"><div class="choice-label">Step 4 — Justify your decision</div>
+            <textarea class="justify-area" id="i-f-just" placeholder="Why these tools? What problem are you solving? What could go wrong?" oninput="saveAll()"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="action-bar">
+      <button class="btn-grade" onclick="grade('inflation')">Grade My Choices</button>
+      <button class="btn-expert" onclick="toggleExpert('inflation')">Reveal Expert Analysis</button>
+      <span class="grade-sum" id="gsum-inflation"></span>
+    </div>
+    <div class="grade-fb" id="gfb-inflation"></div>
+    <div class="expert-reveal" id="exp-inflation">
+      <div class="expert-head">📊 Expert Analysis — Inflation</div>
+      <div class="expert-body">
+        <div class="expert-grid">
+          <div class="expert-col congress"><h4>What Congress Would Likely Do</h4><p>To fight inflation, Congress would turn to <strong>contractionary fiscal policy</strong> — <strong>cutting government spending</strong> and possibly <strong>raising taxes</strong> to remove money from the economy. Less spending means less demand, which puts downward pressure on prices. In practice this is politically very difficult — cutting popular programs or raising taxes rarely wins votes, and Congress often moves slowly.</p></div>
+          <div class="expert-col fed"><h4>What the Fed Would Likely Do</h4><p>The Fed's primary tool against inflation is <strong>raising interest rates</strong>. Higher rates make borrowing more expensive, discouraging spending and investment — cooling demand. The Fed may also <strong>decrease the money supply</strong>. This is exactly what happened in 2022–2023 when inflation hit 9%; the Fed raised rates from near zero to over 5% in about 18 months. The risk: raising rates too aggressively can trigger a recession.</p></div>
+        </div>
+        <div class="tension-box"><strong>Tension Point:</strong> The Fed can act quickly; Congress often can't or won't. During the 2021–2023 inflation surge, the Fed raised rates aggressively while Congress continued high spending — arguably working at cross-purposes. This is a real tension between independent monetary policy and politically-driven fiscal policy.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGFLATION -->
+  <div class="scenario-content" id="sc-stagflation">
+    <div class="scenario-brief" data-for="stagflation">
+      <div class="brief-label">⚠️ Crisis Briefing — Stagflation</div>
+      <div class="brief-headline">The Economy Is Stuck — High Prices AND High Unemployment</div>
+      <div class="brief-body">A global oil shock has caused production costs to spike across every industry. Businesses are laying off workers because they can't afford to operate, yet prices keep rising because supply is constrained. This is a policy nightmare: the tools that fix inflation tend to make unemployment worse, and vice versa.</div>
+      <div class="stat-row">
+        <div class="stat-box" style="color:var(--stagflation)">Unemployment: 7.8% ↑</div>
+        <div class="stat-box" style="color:var(--stagflation)">Inflation: 8.3% ↑</div>
+        <div class="stat-box" style="color:var(--stagflation)">GDP Growth: −0.4% ↓</div>
+      </div>
+    </div>
+    <div class="roles-container">
+      <div class="role-panel congress-panel">
+        <div class="role-header">You Are Congress<span>Fiscal Policy Decision</span></div>
+        <div class="role-body">
+          <div class="choice-group"><div class="choice-label">Step 1 — Choose your approach</div>
+            <div class="choice-options">
+              <label class="choice-opt"><input type="radio" name="s-c-app" value="expansionary"> Expansionary — prioritize unemployment</label>
+              <label class="choice-opt"><input type="radio" name="s-c-app" value="contractionary"> Contractionary — prioritize inflation</label>
+              <label class="choice-opt"><input type="radio" name="s-c-app" value="hold"> Hold — wait and see</label>
+              <label class="choice-opt"><input type="radio" name="s-c-app" value="supply-side"> Supply-side — fix the root cause (energy, supply chain)</label>
+            </div>
+          </div>
+          <div class="choice-group"><div class="choice-label">Step 2 — Choose your tool</div>
+            <div class="choice-options">
+              <label class="choice-opt"><input type="radio" name="s-c-tool" value="inc-spend"> Increase government spending</label>
+              <label class="choice-opt"><input type="radio" name="s-c-tool" value="dec-spend"> Decrease government spending</label>
+              <label class="choice-opt"><input type="radio" name="s-c-tool" value="cut-tax"> Cut taxes</label>
+              <label class="choice-opt"><input type="radio" name="s-c-tool" value="raise-tax"> Raise taxes</label>
+              <label class="choice-opt"><input type="radio" name="s-c-tool" value="supply-invest"> Invest in energy independence / supply chain relief</label>
+            </div>
+          </div>
+          <div class="intensity-group"><div class="choice-label">Step 3 — How aggressive?</div>
+            <input type="range" class="intensity-slider" id="sc-int" min="1" max="5" value="3" oninput="updInt('sc');saveAll()">
+            <div class="intensity-labels"><span>Cautious</span><span>Moderate</span><span>Aggressive</span></div>
+            <div class="intensity-disp" id="sc-int-lbl">Moderate response</div>
+          </div>
+          <div class="choice-group"><div class="choice-label">Step 4 — Justify your decision</div>
+            <textarea class="justify-area" id="s-c-just" placeholder="There's no perfect answer here. Explain your trade-off — what problem are you prioritizing and why?" oninput="saveAll()"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="role-panel fed-panel">
+        <div class="role-header">You Are the Fed<span>Monetary Policy Decision</span></div>
+        <div class="role-body">
+          <div class="choice-group"><div class="choice-label">Step 1 — Choose your approach</div>
+            <div class="choice-options">
+              <label class="choice-opt"><input type="radio" name="s-f-app" value="expansionary"> Expansionary — prioritize unemployment</label>
+              <label class="choice-opt"><input type="radio" name="s-f-app" value="contractionary"> Contractionary — prioritize inflation</label>
+              <label class="choice-opt"><input type="radio" name="s-f-app" value="hold"> Hold — wait and see</label>
+            </div>
+          </div>
+          <div class="choice-group"><div class="choice-label">Step 2 — Choose your tool</div>
+            <div class="choice-options">
+              <label class="choice-opt"><input type="radio" name="s-f-tool" value="lower-rates"> Lower interest rates</label>
+              <label class="choice-opt"><input type="radio" name="s-f-tool" value="raise-rates"> Raise interest rates</label>
+              <label class="choice-opt"><input type="radio" name="s-f-tool" value="inc-money"> Increase money supply (buy bonds)</label>
+              <label class="choice-opt"><input type="radio" name="s-f-tool" value="dec-money"> Decrease money supply (sell bonds)</label>
+              <label class="choice-opt"><input type="radio" name="s-f-tool" value="hold-steady"> Hold steady — no change for now</label>
+            </div>
+          </div>
+          <div class="intensity-group"><div class="choice-label">Step 3 — How aggressive?</div>
+            <input type="range" class="intensity-slider" id="sf-int" min="1" max="5" value="3" oninput="updInt('sf');saveAll()">
+            <div class="intensity-labels"><span>Cautious</span><span>Moderate</span><span>Aggressive</span></div>
+            <div class="intensity-disp" id="sf-int-lbl">Moderate response</div>
+          </div>
+          <div class="choice-group"><div class="choice-label">Step 4 — Justify your decision</div>
+            <textarea class="justify-area" id="s-f-just" placeholder="There's no clean answer here. Which problem are you prioritizing — and what's the cost of that choice?" oninput="saveAll()"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="action-bar">
+      <button class="btn-grade" onclick="grade('stagflation')">Grade My Choices</button>
+      <button class="btn-expert" onclick="toggleExpert('stagflation')">Reveal Expert Analysis</button>
+      <span class="grade-sum" id="gsum-stagflation"></span>
+    </div>
+    <div class="grade-fb" id="gfb-stagflation"></div>
+    <div class="expert-reveal" id="exp-stagflation">
+      <div class="expert-head">📊 Expert Analysis — Stagflation</div>
+      <div class="expert-body">
+        <div class="expert-grid">
+          <div class="expert-col congress"><h4>What Congress Would Likely Do</h4><p>Stagflation is a policy trap. <strong>Expansionary fiscal policy</strong> could ease unemployment — but would likely worsen inflation. <strong>Contractionary policy</strong> might cool inflation — but could deepen the recession. Most economists argue there is no clean fiscal solution. Congress might focus on <strong>supply-side measures</strong> — investing in energy independence or reducing production costs — to address the root cause rather than the symptoms.</p></div>
+          <div class="expert-col fed"><h4>What the Fed Would Likely Do</h4><p>The Fed faces the same impossible trade-off. In the 1970s stagflation crisis, Fed Chair Paul Volcker chose to <strong>aggressively raise interest rates</strong> — prioritizing inflation over unemployment. It worked, but caused a severe recession and unemployment hit 10%. The Fed essentially decided that runaway inflation was the bigger long-term danger. This decision remains controversial among economists today.</p></div>
+        </div>
+        <div class="tension-box"><strong>The Hard Truth:</strong> Stagflation exposes the limits of both fiscal and monetary policy. Neither set of tools fixes both problems at once. The 1970s taught economists that sometimes there is no good option — only less bad ones. The real question becomes: <em>which problem do you prioritize, and who bears the cost of that choice?</em></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ EXIT TICKET ═══════════════════ -->
+<div id="tab-exit" class="panel">
+  <div class="section-title">Exit Ticket</div>
+  <div class="section-sub">Answer all three questions using vocabulary from today. Be specific.</div>
+
+  <div class="score-box" id="score-box">
+    <h3>Your Simulation Score</h3>
+    <div class="score-big" id="score-total">—</div>
+    <div class="score-denom">out of 12 graded choice points</div>
+    <div class="score-chips">
+      <span class="chip chip-r" id="chip-r">Recession: —/4</span>
+      <span class="chip chip-i" id="chip-i">Inflation: —/4</span>
+      <span class="chip chip-s" id="chip-s">Stagflation: —/4</span>
+    </div>
+    <div class="score-note">Written justifications are graded separately by your teacher.</div>
+  </div>
+
+  <div class="exit-q">
+    <div class="exit-q-head">Question 1 of 3 — Vocabulary Check</div>
+    <div class="exit-q-body">
+      <p>What is the difference between fiscal policy and monetary policy? Who controls each one?</p>
+      <textarea class="exit-ta" id="exit-1" placeholder="Write your answer here..." oninput="saveAll()"></textarea>
+    </div>
+  </div>
+  <div class="exit-q">
+    <div class="exit-q-head">Question 2 of 3 — Application</div>
+    <div class="exit-q-body">
+      <p>The economy is in a recession. Unemployment is at 9% and prices are stable. Name one thing Congress could do and one thing the Fed could do to help. Explain why each tool would work.</p>
+      <textarea class="exit-ta" id="exit-2" placeholder="Write your answer here..." style="min-height:90px;" oninput="saveAll()"></textarea>
+    </div>
+  </div>
+  <div class="exit-q">
+    <div class="exit-q-head">Question 3 of 3 — Critical Thinking</div>
+    <div class="exit-q-body">
+      <p>Why is stagflation so difficult to solve with normal policy tools? What trade-off does it force policymakers to make?</p>
+      <textarea class="exit-ta" id="exit-3" placeholder="Write your answer here..." style="min-height:90px;" oninput="saveAll()"></textarea>
+    </div>
+  </div>
+
+  <div class="submit-section">
+    <h3>Submit Your Work</h3>
+    <p>When you have completed all three scenarios and answered all three exit ticket questions, click the button below. It will open a print dialog — choose <strong>"Save as PDF"</strong> and submit the PDF to your teacher.</p>
+    <button class="btn-pdf" onclick="savePDF()">💾 Save as PDF to Submit</button>
+  </div>
+</div>
+
+<script>
+// ── ANSWER KEY ──
+// correct = array of accepted values; lenient = partial credit mindset for stagflation
+const KEY = {
+  recession: {
+    'r-c-app':  { correct:['expansionary'], pts:1 },
+    'r-c-tool': { correct:['inc-spend','cut-tax','both-exp'], pts:1 },
+    'r-f-app':  { correct:['expansionary'], pts:1 },
+    'r-f-tool': { correct:['lower-rates','inc-money','both-exp-f'], pts:1 }
+  },
+  inflation: {
+    'i-c-app':  { correct:['contractionary'], pts:1 },
+    'i-c-tool': { correct:['dec-spend','raise-tax','both-con'], pts:1 },
+    'i-f-app':  { correct:['contractionary'], pts:1 },
+    'i-f-tool': { correct:['raise-rates','dec-money','both-con-f'], pts:1 }
+  },
+  stagflation: {
+    // No single right answer — accept multiple reasonable choices
+    's-c-app':  { correct:['supply-side','contractionary','hold'], pts:1, lenient:true },
+    's-c-tool': { correct:['supply-invest','dec-spend','raise-tax'], pts:1, lenient:true },
+    's-f-app':  { correct:['contractionary','hold'], pts:1, lenient:true },
+    's-f-tool': { correct:['raise-rates','dec-money','hold-steady'], pts:1, lenient:true }
+  }
+};
+
+const INT_LABELS = ['','Very cautious — small steps only','Cautious — modest action','Moderate response','Aggressive — strong action','Maximum — all tools, full force'];
+let scores = { recession:null, inflation:null, stagflation:null };
+
+function updInt(id) {
+  const el = document.getElementById(id+'-int');
+  if(el) document.getElementById(id+'-int-lbl').textContent = INT_LABELS[el.value];
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='exit') updateScoreBox();
+}
+
+function showScenario(name) {
+  document.querySelectorAll('.scenario-content').forEach(s=>s.classList.remove('visible'));
+  document.querySelectorAll('.scenario-tab').forEach(t=>{ t.className='scenario-tab'; });
+  document.getElementById('sc-'+name).classList.add('visible');
+  document.getElementById('stab-'+name).classList.add('active-'+name);
+}
+
+function grade(scenario) {
+  const key = KEY[scenario];
+  let earned=0, total=0;
+  const lines=[];
+
+  for(const [field, info] of Object.entries(key)) {
+    total += info.pts;
+    const sel = document.querySelector(`input[name="${field}"]:checked`);
+    const val = sel ? sel.value : null;
+    const ok = val && info.correct.includes(val);
+
+    document.querySelectorAll(`input[name="${field}"]`).forEach(r=>{
+      const opt = r.closest('.choice-opt');
+      opt.classList.remove('g-correct','g-wrong','g-show');
+      if(r.value===val && ok) opt.classList.add('g-correct');
+      else if(r.value===val && !ok) opt.classList.add('g-wrong');
+      if(!ok && info.correct.includes(r.value)) opt.classList.add('g-show');
+    });
+
+    const isCField = field.includes('-c-');
+    const lbl = field.includes('app') ? (isCField?'Congress approach':'Fed approach') : (isCField?'Congress tool':'Fed tool');
+    if(ok) {
+      earned += info.pts;
+      lines.push(`<div class="fb-row"><span class="tag-ok">✓ ${lbl}:</span> Correct${info.lenient?' (valid choice for this scenario)':''}.</div>`);
+    } else if(val) {
+      lines.push(`<div class="fb-row"><span class="tag-no">✗ ${lbl}:</span> Reconsider — the dashed outline shows a stronger choice for this scenario.</div>`);
+    } else {
+      lines.push(`<div class="fb-row"><span class="tag-no">✗ ${lbl}:</span> No selection made.</div>`);
+    }
+  }
+
+  // Written response check (15-char minimum, not shown to student)
+  const prefix = scenario[0];
+  let writtenEarned = 0;
+  ['c','f'].forEach(role=>{
+    const ta = document.getElementById(`${prefix}-${role}-just`);
+    const len = ta ? ta.value.trim().length : 0;
+    const rl = role==='c'?'Congress justification':'Fed justification';
+    if(len>=15){
+      writtenEarned++;
+      lines.push(`<div class="fb-row"><span class="tag-wr">✏️ ${rl}:</span> Written — teacher will review.</div>`);
+    } else {
+      lines.push(`<div class="fb-row"><span class="tag-no">⚠ ${rl}:</span> Incomplete — make sure you've written a full explanation of your reasoning.</div>`);
+    }
+  });
+
+  scores[scenario] = { earned, total, writtenEarned, writtenTotal: 2 };
+
+  const sumEl = document.getElementById('gsum-'+scenario);
+  sumEl.textContent = `Score: ${earned}/${total}`;
+  sumEl.style.color = earned===total?'var(--correct)':earned>=total/2?'var(--partial)':'var(--incorrect)';
+
+  const fb = document.getElementById('gfb-'+scenario);
+  fb.innerHTML = lines.join('');
+  fb.classList.add('visible');
+
+  // Progress dots
+  document.getElementById('dot-'+scenario).classList.remove('active');
+  document.getElementById('dot-'+scenario).classList.add('done');
+  document.getElementById('chk-'+scenario).textContent=' ✓';
+  updateProgress();
+  saveAll();
+}
+
+function updateProgress() {
+  const done = ['recession','inflation','stagflation'].filter(s=>scores[s]!==null).length;
+  document.getElementById('prog-label').textContent = `${done} of 3 scenarios graded`;
+}
+
+function toggleExpert(scenario) {
+  const el = document.getElementById('exp-'+scenario);
+  const wasVisible = el.classList.contains('visible');
+  el.classList.toggle('visible',!wasVisible);
+  if(!wasVisible) el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function updateScoreBox() {
+  const graded = Object.values(scores).filter(s=>s!==null);
+  if(!graded.length) return;
+  document.getElementById('score-box').style.display='block';
+
+  // Multiple choice points
+  const mcEarned = graded.reduce((s,v)=>s+v.earned,0);
+  const mcTotal  = graded.reduce((s,v)=>s+v.total,0);
+
+  // Written justification points (2 per scenario)
+  const wrEarned = graded.reduce((s,v)=>s+(v.writtenEarned||0),0);
+  const wrTotal  = graded.reduce((s,v)=>s+(v.writtenTotal||0),0);
+
+  // Exit ticket points (3 questions, 1 pt each)
+  const exitIds = ['exit-1','exit-2','exit-3'];
+  const exitEarned = exitIds.reduce((sum,id)=>{
+    const el=document.getElementById(id);
+    return sum + ((el&&el.value.trim().length>=15)?1:0);
+  },0);
+  const exitTotal = 3;
+
+  const totalEarned = mcEarned + wrEarned + exitEarned;
+  const totalPts    = mcTotal  + wrTotal  + exitTotal;
+
+  document.getElementById('score-total').textContent=`${totalEarned}/${totalPts}`;
+
+  ['recession','inflation','stagflation'].forEach(s=>{
+    const prefix = s==='recession'?'r':s==='inflation'?'i':'s';
+    if(scores[s]){
+      const sc=scores[s];
+      const pts = sc.earned+(sc.writtenEarned||0);
+      const tot = sc.total+(sc.writtenTotal||0);
+      document.getElementById('chip-'+prefix).textContent =
+        `${s[0].toUpperCase()+s.slice(1)}: ${pts}/${tot}`;
+    }
+  });
+
+  // Store for PDF header
+  window._pdfScoreData = { totalEarned, totalPts, mcEarned, mcTotal, wrEarned, wrTotal, exitEarned, exitTotal };
+}
+
+// Radio styling
+document.addEventListener('change', e=>{
+  if(e.target.type==='radio') {
+    const name = e.target.name;
+    const panel = e.target.closest('.role-panel');
+    const isCongress = panel && panel.classList.contains('congress-panel');
+    const cls = isCongress?'sel-c':'sel-f';
+    document.querySelectorAll(`input[name="${name}"]`).forEach(r=>{
+      r.closest('.choice-opt').classList.remove('sel-c','sel-f');
+    });
+    e.target.closest('.choice-opt').classList.add(cls);
+    saveAll();
+  }
+});
+
+// ── LOCALSTORAGE ──
+function saveAll() {
+  const data = {
+    name: document.getElementById('sname').value,
+    period: document.getElementById('speriod').value,
+    radios: {},
+    sliders: {},
+    textareas: {},
+    scores,
+    savedAt: new Date().toISOString()
+  };
+  document.querySelectorAll('input[type="radio"]:checked').forEach(r=>{ data.radios[r.name]=r.value; });
+  ['rc','rf','ic','if','sc','sf'].forEach(id=>{
+    const el=document.getElementById(id+'-int');
+    if(el) data.sliders[id]=el.value;
+  });
+  ['r-c-just','r-f-just','i-c-just','i-f-just','s-c-just','s-f-just','exit-1','exit-2','exit-3'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) data.textareas[id]=el.value;
+  });
+  try {
+    localStorage.setItem('policy_sim_v2',JSON.stringify(data));
+    document.getElementById('save-status').textContent='Auto-saved '+new Date().toLocaleTimeString();
+  } catch(e) {
+    document.getElementById('save-status').textContent='Save failed';
+  }
+}
+
+function loadAll() {
+  try {
+    const raw=localStorage.getItem('policy_sim_v2');
+    if(!raw) return;
+    const d=JSON.parse(raw);
+    if(d.name) document.getElementById('sname').value=d.name;
+    if(d.period) document.getElementById('speriod').value=d.period;
+    if(d.radios) Object.entries(d.radios).forEach(([name,val])=>{
+      const el=document.querySelector(`input[name="${name}"][value="${val}"]`);
+      if(el){ el.checked=true; const p=el.closest('.role-panel'); el.closest('.choice-opt').classList.add(p&&p.classList.contains('congress-panel')?'sel-c':'sel-f'); }
+    });
+    if(d.sliders) Object.entries(d.sliders).forEach(([id,val])=>{
+      const el=document.getElementById(id+'-int');
+      if(el){ el.value=val; updInt(id); }
+    });
+    if(d.textareas) Object.entries(d.textareas).forEach(([id,val])=>{
+      const el=document.getElementById(id);
+      if(el) el.value=val;
+    });
+    if(d.scores) {
+      scores=d.scores;
+      Object.entries(scores).forEach(([s,sc])=>{
+        if(sc){
+          document.getElementById('dot-'+s).classList.replace('active','done');
+          document.getElementById('chk-'+s).textContent=' ✓';
+          const el=document.getElementById('gsum-'+s);
+          el.textContent=`Score: ${sc.earned}/${sc.total}`;
+          el.style.color=sc.earned===sc.total?'var(--correct)':sc.earned>=sc.total/2?'var(--partial)':'var(--incorrect)';
+        }
+      });
+      updateProgress();
+    }
+    if(d.savedAt) document.getElementById('save-status').textContent='Restored '+new Date(d.savedAt).toLocaleTimeString();
+  } catch(e){ console.log('load error',e); }
+}
+
+// ── PDF / PRINT ──
+function savePDF() {
+  updateScoreBox();
+
+  // Build grade header for print
+  const sd = window._pdfScoreData || {};
+  const name   = document.getElementById('sname').value  || '___________________';
+  const period = document.getElementById('speriod').value || '___';
+  const te = sd.totalEarned ?? '—';
+  const tp = sd.totalPts    ?? '—';
+  const pct = (sd.totalPts && sd.totalPts>0) ? Math.round((sd.totalEarned/sd.totalPts)*100)+'%' : '—';
+
+  const rSc = scores.recession   ? scores.recession.earned  +(scores.recession.writtenEarned  ||0) : '—';
+  const iSc = scores.inflation   ? scores.inflation.earned  +(scores.inflation.writtenEarned  ||0) : '—';
+  const sSc = scores.stagflation ? scores.stagflation.earned+(scores.stagflation.writtenEarned||0) : '—';
+  const rTot = scores.recession   ? (scores.recession.total  +(scores.recession.writtenTotal  ||0)) : 6;
+  const iTot = scores.inflation   ? (scores.inflation.total  +(scores.inflation.writtenTotal  ||0)) : 6;
+  const sTot = scores.stagflation ? (scores.stagflation.total+(scores.stagflation.writtenTotal||0)) : 6;
+  const exitEarned = sd.exitEarned ?? '—';
+
+  const hdr = document.createElement('div');
+  hdr.id = 'print-grade-header';
+  hdr.innerHTML = `
+    <div style="font-family:'Bebas Neue',sans-serif;background:#1a1a2e;color:#f5f0e8;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+      <div>
+        <div style="font-size:1.5rem;letter-spacing:3px;">POLICY MAKERS — STUDENT SUBMISSION</div>
+        <div style="font-size:.85rem;opacity:.7;margin-top:3px;">Name: <strong style="color:#fde68a">${name}</strong> &nbsp;|&nbsp; Period: <strong style="color:#fde68a">${period}</strong></div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:2.2rem;letter-spacing:2px;line-height:1;color:#fde68a;">${te}/${tp}</div>
+        <div style="font-size:.8rem;opacity:.65;">Total Score &nbsp;(${pct})</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:0;border-bottom:3px solid #1a1a2e;font-family:'Bebas Neue',sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+      <div style="flex:1;padding:7px 14px;background:#fff5f5;border-right:1px solid #ccc;font-size:.85rem;">
+        <span style="color:#dc2626;letter-spacing:1px;">📉 RECESSION</span><br>
+        <strong>${rSc}/${rTot}</strong> pts
+      </div>
+      <div style="flex:1;padding:7px 14px;background:#fff7ed;border-right:1px solid #ccc;font-size:.85rem;">
+        <span style="color:#ea580c;letter-spacing:1px;">🔥 INFLATION</span><br>
+        <strong>${iSc}/${iTot}</strong> pts
+      </div>
+      <div style="flex:1;padding:7px 14px;background:#f5f3ff;border-right:1px solid #ccc;font-size:.85rem;">
+        <span style="color:#7c3aed;letter-spacing:1px;">⚠️ STAGFLATION</span><br>
+        <strong>${sSc}/${sTot}</strong> pts
+      </div>
+      <div style="flex:1;padding:7px 14px;background:#f0fdf4;font-size:.85rem;">
+        <span style="color:#15803d;letter-spacing:1px;">✏️ EXIT TICKET</span><br>
+        <strong>${exitEarned}/3</strong> pts
+      </div>
+    </div>`;
+  document.body.insertBefore(hdr, document.body.firstChild);
+
+  // Show all scenario content for print
+  document.querySelectorAll('.scenario-content').forEach(s=>s.style.display='block');
+  document.querySelectorAll('.expert-reveal').forEach(r=>r.classList.add('visible'));
+  document.querySelectorAll('.grade-fb').forEach(f=>f.classList.add('visible'));
+
+  window.print();
+
+  setTimeout(()=>{
+    document.body.removeChild(hdr);
+    document.querySelectorAll('.scenario-content').forEach(s=>{ s.style.display=''; });
+  },1400);
+}
+
+// ── INIT ──
+window.addEventListener('load',()=>{
+  loadAll();
+  showScenario('recession');
+  if(!scores.recession) document.getElementById('dot-recession').classList.add('active');
+});
+</script>
+</body>
+</html>
